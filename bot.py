@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import socket
 import random
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 from logging.handlers import RotatingFileHandler
 import time
 import logging
@@ -9,6 +9,7 @@ import mechanize
 import os
 import re
 import sys
+import json
 from random import randint
 from datetime import datetime, timedelta
 from utils import *
@@ -23,8 +24,8 @@ socket.setdefaulttimeout(float(options['general']['timeout']))
 
 class Bot(object):
 
-    BASE_URL = 'https://pl.ogame.gameforge.com/'
-    LOGIN_URL = 'https://pl.ogame.gameforge.com/main/login'
+    BASE_URL = 'https://it.ogame.gameforge.com/'
+    LOGIN_URL = 'https://it.ogame.gameforge.com/main/login'
     HEADERS = [('User-agent', 'Mozilla/5.0 (Windows NT 6.2; WOW64)\
      AppleWebKit/537.15 (KHTML, like Gecko) Chrome/24.0.1295.0 Safari/537.15')]
     RE_BUILD_REQUEST = re.compile(r"sendBuildRequest\(\'(.*)\', null, 1\)")
@@ -86,7 +87,7 @@ class Bot(object):
         farms = options['farming']['farms']
         self.farm_no = randint(0, len(farms)-1) if farms else 0
         
-        self.MAIN_URL = 'https://s%s-pl.ogame.gameforge.com/game/index.php' % self.uni
+        self.MAIN_URL = 'https://s%s-it.ogame.gameforge.com/game/index.php' % self.uni
         self.PAGES = {
             'main':        self.MAIN_URL + '?page=overview',
             'resources':   self.MAIN_URL + '?page=resources',
@@ -98,6 +99,7 @@ class Bot(object):
             'galaxy':      self.MAIN_URL + '?page=galaxy',
             'galaxyCnt':   self.MAIN_URL + '?page=galaxyContent',
             'events':      self.MAIN_URL + '?page=eventList',
+	    'resSettings': self.MAIN_URL + '?page=resourceSettings',
         }
         self.planets = []
         self.moons = []
@@ -201,7 +203,7 @@ class Bot(object):
         
         self.logger.info('Logging in..')
         self.br.select_form(name='loginForm')
-        self.br.form['uni'] = ['s%s-pl.ogame.gameforge.com' % self.uni]
+        self.br.form['uni'] = ['s%s-it.ogame.gameforge.com' % self.uni]
         self.br.form['login'] = username
         self.br.form['pass'] = password
         self.br.submit()
@@ -291,6 +293,23 @@ class Bot(object):
 
     def update_planet_info(self, planet):
         in_construction_mode = False
+	resp = self.br.open(self._get_url('resSettings', planet))
+        soup = BeautifulSoup(resp)
+	resSentence = u'Capacità di deposito'
+
+        try:
+            table = soup.find_all('table', {'class': 'listOfResourceSettingsPerPlanet'})
+	    for tag in table:
+		trTags = tag.find_all("tr", {"class": ""})
+	    	for t in trTags:
+			td = t.find_all('td')
+			if(len(td)>0 and td[0].text==resSentence):
+				planet.resources['maxMetal'] = td[1].text.replace(' ','').replace('\n','')
+				planet.resources['maxCrystal'] = td[2].text.replace(' ','').replace('\n','')
+				planet.resources['maxDeuterium'] = td[3].text.replace(' ','').replace('\n','')
+        except:
+            self.logger.exception('Exception while updating resources info (capacity)')
+
         resp = self.br.open(self._get_url('resources', planet))
         soup = BeautifulSoup(resp)
 
@@ -304,10 +323,10 @@ class Bot(object):
             energy = int(soup.find(id='resources_energy').text.replace('.',''))
             planet.resources['energy'] = energy
         except:
-            self.logger.exception('Exception while updating resources info')
+            self.logger.exception('Exception while updating resources info (resources)')
         else:
             self.logger.info('Updating resources info for %s:' % planet)
-            s = 'metal - %(metal)s, crystal - %(crystal)s, deuterium - %(deuterium)s'
+            s = 'metal - %(metal)s (%(maxMetal)s), crystal - %(crystal)s (%(maxCrystal)s), deuterium - %(deuterium)s (%(maxDeuterium)s)'
             self.logger.info(s % planet.resources)
         if planet.is_moon():
             return
@@ -417,11 +436,16 @@ class Bot(object):
 
         url = self._get_url('galaxyCnt', origin_planet)
         data = urlencode({'galaxy': galaxy, 'system': system})
-        resp = self.br.open(url, data=data)
-        soup = BeautifulSoup(resp)
-
-        soup.find(id='galaxytable')
-        planets = soup.findAll('tr', {'class': 'row'})
+        resp = self.br.open(url)
+	#print resp.read()#.replace('\\"', '"').replace('\\/','/').replace('\\n','')
+	#				.replace('{\"galaxy\":\"', '<html><head></head><body>')).replace('\",\"class\":\"\"},\"honorScore\":0}}', '</body></html>')
+        #soup = BeautifulSoup(resp)
+	j = json.loads(resp.read())
+	#print j['galaxy']
+	s = '<html><body>' + j['galaxy'] + '</body></html>'
+	soup = BeautifulSoup(s)
+        soup.find("table", id='galaxytable')
+        planets = soup.find_all('tr', {'class': 'row'})
         target_planet = planets[int(position)-1]
         name_el = target_planet.find('td', 'playername')
         status['name'] = name_el.find('span').text
@@ -690,6 +714,7 @@ class Bot(object):
         if l == 0 or not farms[0]:
             return
         farm = farms[self.farm_no%l]
+	print farm
         if not self.get_player_status(farm)['inactive']:
             self.farm_no += 1
             self.logger.error('farm %s seems not to be inactive!', farm)
