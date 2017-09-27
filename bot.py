@@ -189,7 +189,7 @@ class Bot(object):
         
         try:
             resp = self.br.open(self.MAIN_URL, timeout=10)
-            soup = BeautifulSoup(resp)
+            soup = BeautifulSoup(resp,"html5lib")
         except:
             return False
         
@@ -236,7 +236,7 @@ class Bot(object):
 
         self.calc_time(resp)
 
-        soup = BeautifulSoup(resp)
+        soup = BeautifulSoup(resp,"html5lib")
         self.planets = []
         self.moons = []
 
@@ -276,7 +276,7 @@ class Bot(object):
 
     def update_planet_fleet(self, planet):
         resp = self.br.open(self._get_url('fleet', planet))
-        soup = BeautifulSoup(resp)
+        soup = BeautifulSoup(resp,"html5lib")
         ships = {}
         for k, v in self.SHIPS.iteritems():
             available = 0
@@ -294,7 +294,7 @@ class Bot(object):
     def update_planet_info(self, planet):
         in_construction_mode = False
 	resp = self.br.open(self._get_url('resSettings', planet))
-        soup = BeautifulSoup(resp)
+        soup = BeautifulSoup(resp,"html5lib")
 	resSentence = u'Capacità di deposito'
 
         try:
@@ -304,14 +304,14 @@ class Bot(object):
 	    	for t in trTags:
 			td = t.find_all('td')
 			if(len(td)>0 and td[0].text==resSentence):
-				planet.resources['maxMetal'] = td[1].text.replace(' ','').replace('\n','')
-				planet.resources['maxCrystal'] = td[2].text.replace(' ','').replace('\n','')
-				planet.resources['maxDeuterium'] = td[3].text.replace(' ','').replace('\n','')
+				planet.resources['maxMetal'] = td[1].text.replace(' ','').replace('\n','').replace('.','')
+				planet.resources['maxCrystal'] = td[2].text.replace(' ','').replace('\n','').replace('.','')
+				planet.resources['maxDeuterium'] = td[3].text.replace(' ','').replace('\n','').replace('.','')
         except:
             self.logger.exception('Exception while updating resources info (capacity)')
 
         resp = self.br.open(self._get_url('resources', planet))
-        soup = BeautifulSoup(resp)
+        soup = BeautifulSoup(resp,"html5lib")
 
         try:
             metal = int(soup.find(id='resources_metal').text.replace('.',''))
@@ -330,42 +330,82 @@ class Bot(object):
             self.logger.info(s % planet.resources)
         if planet.is_moon():
             return
-        try:
-            buildingList = soup.find(id='building')
-            buildings = ('metalMine', 'crystalMine', 'deuteriumMine', 'solarPlant',
-                'fusionPlant', 'solarSatellite'
-            )
-            for building, b in zip(buildings, buildingList.findAll('li')):
-                can_build = 'on' in b.get('class')
-                fb = b.find('a', 'fastBuild')
-                build_url = fb.get('onclick') if fb else ''
-                if build_url:
-                    build_url = self._parse_build_url(build_url)
-                try:
-                    level = int(b.find('span', 'textlabel').nextSibling)
-                except AttributeError:
-                    try:
-                        level = int(b.find('span', 'level').text)
-                    except:
-                        pass
-                suff_energy = planet.resources['energy'] - self.sim.upgrade_energy_cost(building, level+1) > 0
-                res = dict(
-                    level=level, 
-                    can_build=can_build,
-                    build_url=build_url,
-                    sufficient_energy=suff_energy
-                )
+	maxReached = [int(planet.resources['metal'])>=int(planet.resources['maxMetal']), int(planet.resources['crystal'])>=int(planet.resources['maxCrystal']), int(planet.resources['deuterium'])>=int(planet.resources['maxDeuterium'])]
+	next = ''
+        if(maxReached[0]): next = 'metalDeposit'
+	elif(maxReached[1]): next = 'crystalDeposit'
+	elif(maxReached[2]): next = 'deuteriumDeposit'
+	try:
+	   if(next==''):
+            	buildingList = soup.find(id='building')
+            	buildings = ('metalMine', 'crystalMine', 'deuteriumMine', 'solarPlant',
+               	 'fusionPlant', 'solarSatellite'
+            	)
+            	for building, b in zip(buildings, buildingList.findAll('li')):
+               		can_build = 'on' in b.get('class')
+               	 	fb = b.find('a', 'fastBuild')
+               	 	build_url = fb.get('onclick') if fb else ''
+             	  	if build_url:
+               		    build_url = self._parse_build_url(build_url)
+               		try:
+               		    level = int(b.find('span', 'textlabel').nextSibling)
+               		except AttributeError:
+               		    try:
+               		        level = int(b.find('span', 'level').text)
+               		    except:
+               		        pass
+               		suff_energy = planet.resources['energy'] - self.sim.upgrade_energy_cost(building, level+1) > 0
+               		res = dict(
+               		    level=level, 
+               		    can_build=can_build,
+               		    build_url=build_url,
+               		    sufficient_energy=suff_energy
+               		)
 
-                planet.buildings[building] = res
+                	planet.buildings[building] = res
+	   else:
+		buildingList = soup.find(id='storage')
+                buildings = ('metalDeposit', 'crystalDeposit', 'deuteriumDeposit')
+                for building, b in zip(buildings, buildingList.findAll('li')):
+                 can_build = 'on' in b.get('class')
+                 fb = b.find('a', 'fastBuild')
+                 build_url = fb.get('onclick') if fb else ''
+                 if build_url:
+                     build_url = self._parse_build_url(build_url)
+                 try:
+                     level = int(b.find('span', 'textlabel').nextSibling)
+                 except AttributeError:
+                     try:
+                         level = int(b.find('span', 'level').text)
+                     except:
+                         pass
+		 print can_build
+                 res = dict(
+                     level=level,
+                     can_build=can_build,
+                     build_url=build_url,
+                     sufficient_energy=True
+                 )
+		
+		 planet.buildings[building] = res
 
-            if buildingList.find('div', 'construction'):
-                in_construction_mode = True
+           if buildingList.find('div', 'construction'):
+               in_construction_mode = True
         except:
             self.logger.exception('Exception while updating buildings info')
             return False
         else:
             self.logger.info('%s buildings were updated' % planet)
-        if not in_construction_mode:
+        
+	if not in_construction_mode and next != '':
+	    text, url = planet.get_deposit_url(next)
+            if url:
+                self.logger.info('Building upgrade on %s: %s'% (planet, text))
+                self.br.open(url)
+                planet.in_construction_mode = True
+                #let now transport manager to clear building queue
+                self.transport_manager.update_building(planet)
+	elif not in_construction_mode and next=='':
             text, url = planet.get_mine_to_upgrade()
             if url:
                 self.logger.info('Building upgrade on %s: %s'% (planet, text))
@@ -436,21 +476,21 @@ class Bot(object):
 
         url = self._get_url('galaxyCnt', origin_planet)
         data = urlencode({'galaxy': galaxy, 'system': system})
-        resp = self.br.open(url)
+        resp = self.br.open(url, data=data)
 	#print resp.read()#.replace('\\"', '"').replace('\\/','/').replace('\\n','')
 	#				.replace('{\"galaxy\":\"', '<html><head></head><body>')).replace('\",\"class\":\"\"},\"honorScore\":0}}', '</body></html>')
         #soup = BeautifulSoup(resp)
 	j = json.loads(resp.read())
 	#print j['galaxy']
 	s = '<html><body>' + j['galaxy'] + '</body></html>'
-	soup = BeautifulSoup(s)
+	soup = BeautifulSoup(s,"html5lib")
         soup.find("table", id='galaxytable')
         planets = soup.find_all('tr', {'class': 'row'})
         target_planet = planets[int(position)-1]
         name_el = target_planet.find('td', 'playername')
         status['name'] = name_el.find('span').text
-
-        status['inactive'] = 'inactive' in name_el.get('class', '')
+        status['inactive'] = 'inactive' in name_el.get('class', '') or 'longinactive' in name_el.get('class', '')
+	print status['name'], '--------------', status['inactive']
         return status
 
     def find_inactive_nearby(self, planet, radius=15):
@@ -466,7 +506,7 @@ class Bot(object):
             url = self._get_url('galaxyCnt', planet)
             data = urlencode({'galaxy': galaxy, 'system': system})
             resp = self.br.open(url, data=data)
-            soup = BeautifulSoup(resp)
+            soup = BeautifulSoup(resp,"html5lib")
 
             galaxy_el = soup.find(id='galaxytable')
             planets = galaxy_el.findAll('tr', {'class': 'row'})
@@ -528,7 +568,7 @@ class Bot(object):
                 self.logger.info('No available ships on the planet')
                 return False
 
-            soup = BeautifulSoup(resp)
+            soup = BeautifulSoup(resp,"html5lib")
             for ship, num in fleet.iteritems():
                 s = soup.find(id='button' + self.SHIPS[ship])
                 num = int(num)
@@ -623,7 +663,7 @@ class Bot(object):
         else:
             self.logger.info('ATTACK!')
             resp = self.br.open(self.PAGES['events'])
-            soup = BeautifulSoup(resp)
+            soup = BeautifulSoup(resp,"html5lib")
             hostile = False
             try:
                 for tr in soup.findAll('tr'):

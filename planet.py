@@ -16,6 +16,11 @@ class Planet(object):
             'crystalMine',
             'deuteriumMine'
         )
+	self.deposits = (
+	   'metalDeposit'
+	   'crystalDeposit'
+	   'deuteriumDeposit'
+	)
         self.resources = {
             'metal': 0,
             'crystal': 0,
@@ -60,6 +65,24 @@ class Planet(object):
                 'can_build': False,
                 'sufficient_energy': True
             },
+	    'metalDeposit': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+                'sufficient_energy': True
+            },
+            'crystalDeposit': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+                'sufficient_energy': True
+            },
+            'deuteriumDeposit': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+                'sufficient_energy': True
+            },
         }
 
         self.ships = {
@@ -84,6 +107,18 @@ class Planet(object):
     def __eq__(self, other):
         return self.id == other.id
     
+    
+    def get_deposit_url(self,deposit):
+	build_options = options['building']
+        levels_diff = map(int, build_options['levels_diff'].split(','))
+
+        b = self.buildings
+	
+        if b[deposit]['can_build']:
+                return u'Deposit', b[deposit]['build_url']
+        else:
+            return None, None
+
     def get_mine_to_upgrade(self):
         build_options = options['building']
         min_energy_level = int(build_options['min_energy_level'])
