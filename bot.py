@@ -28,7 +28,7 @@ class Bot(object):
     LOGIN_URL = 'https://it.ogame.gameforge.com/main/login'
     HEADERS = [('User-agent', 'Mozilla/5.0 (Windows NT 6.2; WOW64)\
      AppleWebKit/537.15 (KHTML, like Gecko) Chrome/24.0.1295.0 Safari/537.15')]
-    RE_BUILD_REQUEST = re.compile(r"sendBuildRequest\(\'(.*)\', null, 1\)")
+    RE_BUILD_REQUEST = re.compile(r"sendBuildRequest\(\'(.*)\',null,(1|0|false|true)\)")
     RE_SERVER_TIME = re.compile(r"var serverTime=new Date\((.*)\);var localTime")
 
     #ship -> ship id on the page
@@ -144,6 +144,7 @@ class Bot(object):
         """
         convert: `sendBuildRequest('url', null, 1)`; into: `url`
         """
+	#print js
         return self.RE_BUILD_REQUEST.findall(js)[0]
 
     def _parse_server_time(self, content):
@@ -270,6 +271,8 @@ class Bot(object):
         for p in iter(self.planets):
             self.update_planet_info(p)
             self.update_planet_fleet(p)
+	    self.update_planet_struct(p)
+	    self.update_planet_researches(p)
         for m in iter(self.moons):
             self.update_planet_info(m)
             self.update_planet_fleet(m)
@@ -346,7 +349,7 @@ class Bot(object):
                	 	fb = b.find('a', 'fastBuild')
                	 	build_url = fb.get('onclick') if fb else ''
              	  	if build_url:
-               		    build_url = self._parse_build_url(build_url)
+               		    build_url = self._parse_build_url(build_url.replace(' ', ''))
                		try:
                		    level = int(b.find('span', 'textlabel').nextSibling)
                		except AttributeError:
@@ -355,6 +358,7 @@ class Bot(object):
                		    except:
                		        pass
                		suff_energy = planet.resources['energy'] - self.sim.upgrade_energy_cost(building, level+1) > 0
+			
                		res = dict(
                		    level=level, 
                		    can_build=can_build,
@@ -371,7 +375,7 @@ class Bot(object):
                  fb = b.find('a', 'fastBuild')
                  build_url = fb.get('onclick') if fb else ''
                  if build_url:
-                     build_url = self._parse_build_url(build_url)
+                     build_url = self._parse_build_url(build_url.replace(' ', ''))
                  try:
                      level = int(b.find('span', 'textlabel').nextSibling)
                  except AttributeError:
@@ -379,7 +383,7 @@ class Bot(object):
                          level = int(b.find('span', 'level').text)
                      except:
                          pass
-		 print can_build
+
                  res = dict(
                      level=level,
                      can_build=can_build,
@@ -387,7 +391,7 @@ class Bot(object):
                      sufficient_energy=True
                  )
 		
-		 planet.buildings[building] = res
+		 planet.deposits[building] = res
 
            if buildingList.find('div', 'construction'):
                in_construction_mode = True
@@ -401,7 +405,7 @@ class Bot(object):
 	    text, url = planet.get_deposit_url(next)
             if url:
                 self.logger.info('Building upgrade on %s: %s'% (planet, text))
-                self.br.open(url)
+                self.br.open(url[0])
                 planet.in_construction_mode = True
                 #let now transport manager to clear building queue
                 self.transport_manager.update_building(planet)
@@ -409,12 +413,115 @@ class Bot(object):
             text, url = planet.get_mine_to_upgrade()
             if url:
                 self.logger.info('Building upgrade on %s: %s'% (planet, text))
-                self.br.open(url)
+                self.br.open(url[0])
                 planet.in_construction_mode = True
                 #let now transport manager to clear building queue
                 self.transport_manager.update_building(planet)
         else:
             self.logger.info('Building queue is not empty')
+        return True
+    
+    def update_planet_struct(self,planet):
+	self.logger.info('Checking structures update')
+	in_construction_mode = False
+	resp = self.br.open(self._get_url('station', planet))
+        soup = BeautifulSoup(resp,"html5lib")
+	try:
+		stationList = soup.find(id='stationbuilding')
+		structures = ('roboticsFactory', 'shipyard', 'researchLab', 'allianceDepot','missileSilo', 'naniteFactory', 'terraformer', 'spaceDock')
+		for station, b in zip(structures, stationList.findAll('li')):
+        		can_build = 'on' in b.get('class')
+               		fb = b.find('a', 'fastBuild')
+               		stat_url = fb.get('onclick') if fb else ''
+              		if stat_url:
+               	   		stat_url = self._parse_build_url(stat_url.replace('\n', '').replace(' ',''))
+               		try:
+               	   		level = int(b.find('span', 'textlabel').nextSibling)
+               		except AttributeError:
+               	      		try:
+               	         		level = int(b.find('span', 'level').text)
+               	        	except:
+               	                	pass
+                	res = dict(
+               	      		level=level,
+               	      		can_build=can_build,
+               	      		build_url=stat_url,
+				enabled=planet.stations[station]['enabled'],
+               	      		sufficient_energy=True
+               		)
+
+                	planet.stations[station] = res
+	         
+		if stationList.find('div', 'construction'):
+                      in_construction_mode = True
+        except:
+            self.logger.exception('Exception while updating stations info')
+            return False
+        else:
+            self.logger.info('%s stations were updated' % planet)
+
+	if not in_construction_mode:
+            text, url = planet.get_station_url()
+            if url:
+                self.logger.info('Stations upgrade on %s: %s'% (planet, text))
+                self.br.open(url[0])
+                planet.in_construction_mode = True
+               # let now transport manager to clear building queue
+                self.transport_manager.update_building(planet)
+        else:
+            self.logger.info('Building queue is not empty')
+        return True
+
+    def update_planet_researches(self,planet):
+        self.logger.info('Checking researches update')
+        in_research_mode = False
+        resp = self.br.open(self._get_url('research', planet))
+        soup = BeautifulSoup(resp,"html5lib")
+        try:
+                researchList = soup.find(id='buttonz')
+		resTemp = researchList.findChildren(id='wrapBattle')
+                researches = (('energyTech', 'laserTech', 'ionTech', 'hyperspaceTech','plasmaTech'), ('combustionDrive', 'impulseDrive',
+			      'hyperspaceDrive'), ('espionageTech','computerTech', 'astrophysics', 'intergalacticRes','gravitonTech'),('weaponTech', 'shieldingTech', 'armourTech'))
+		
+		for category,resCategory in zip(researches, resTemp):
+               	 	for research, b in zip(category, resCategory.findAll('li')):
+                       	 	can_build = 'on' in b.get('class')
+                       	 	fb = b.find('a', 'fastBuild')
+                       	 	res_url = fb.get('onclick') if fb else ''
+                       	 	if res_url:
+                       	       	  res_url = self._parse_build_url(res_url.replace('\n', '').replace(' ',''))
+                       	 	try:
+                       	       	  level = int(b.find('span', 'textlabel').nextSibling)
+                       	 	except AttributeError:
+                       	       	  try:
+                       	                 level = int(b.find('span', 'level').text)
+                       	          except:
+                       	                 pass
+                       	 	res = dict(
+                       	        	level=level,
+                       	         	can_build=can_build,
+                       	        	build_url=res_url,
+                       	         	enabled=planet.researches[research]['enabled'],
+                       	         	sufficient_energy=True
+                       	 	)			
+
+                         	planet.researches[research] = res
+
+                if researchList.find('div', 'construction'):
+                      in_research_mode = True
+        except:
+            self.logger.exception('Exception while updating stations info')
+            return False
+        else:
+            self.logger.info('%s researches were updated' % planet)
+	
+        if not in_research_mode:
+            text, url = planet.get_research_url()
+            if url:
+                self.logger.info('Research upgrade on %s: %s'% (planet, text))
+                self.br.open(url[0])
+        else:
+            self.logger.info('Research queue is not empty')
         return True
 
     def transport_resources(self):
@@ -477,11 +584,9 @@ class Bot(object):
         url = self._get_url('galaxyCnt', origin_planet)
         data = urlencode({'galaxy': galaxy, 'system': system})
         resp = self.br.open(url, data=data)
-	#print resp.read()#.replace('\\"', '"').replace('\\/','/').replace('\\n','')
-	#				.replace('{\"galaxy\":\"', '<html><head></head><body>')).replace('\",\"class\":\"\"},\"honorScore\":0}}', '</body></html>')
-        #soup = BeautifulSoup(resp)
+	
 	j = json.loads(resp.read())
-	#print j['galaxy']
+	
 	s = '<html><body>' + j['galaxy'] + '</body></html>'
 	soup = BeautifulSoup(s,"html5lib")
         soup.find("table", id='galaxytable')
@@ -490,7 +595,7 @@ class Bot(object):
         name_el = target_planet.find('td', 'playername')
         status['name'] = name_el.find('span').text
         status['inactive'] = 'inactive' in name_el.get('class', '') or 'longinactive' in name_el.get('class', '')
-	print status['name'], '--------------', status['inactive']
+	
         return status
 
     def find_inactive_nearby(self, planet, radius=15):
@@ -754,7 +859,7 @@ class Bot(object):
         if l == 0 or not farms[0]:
             return
         farm = farms[self.farm_no%l]
-	print farm
+	
         if not self.get_player_status(farm)['inactive']:
             self.farm_no += 1
             self.logger.error('farm %s seems not to be inactive!', farm)

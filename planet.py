@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from config import options
-
+import operator
 
 class Planet(object):
-    def __init__(self, id, name, coords, url, in_construction_mode=False):
+    def __init__(self, id, name, coords, url, in_construction_mode=False, in_research_mode=False):
         self.id = id
         self.name = name
         self.url = url
@@ -11,6 +11,7 @@ class Planet(object):
         self.mother = False
         self.galaxy, self.system, self.position = map(int, self.coords.split(":"))
         self.in_construction_mode = in_construction_mode
+	#self.in_research_mode = in_research_mode
         self.mines = (
             'metalMine',
             'crystalMine',
@@ -33,57 +34,247 @@ class Planet(object):
                 'level': 0,
                 'buildUrl':'',
                 'can_build': False,
+		'enabled': True,
                 'sufficient_energy': False
             },
             'crystalMine': {
                 'level': 0,
                 'buildUrl':'',
                 'can_build': False,
+		'enabled': True,
                 'sufficient_energy': False
             },
             'deuteriumMine': {
                 'level': 0,
                 'buildUrl':'',
                 'can_build': False,
+		'enabled': True,
                 'sufficient_energy': False
             },
             'solarPlant': {
                 'level': 0,
                 'buildUrl':'',
                 'can_build': False,
+		'enabled': True,
                 'sufficient_energy': True
             },
             'fusionPlant': {
                 'level': 0,
                 'buildUrl':'',
                 'can_build': False,
+		'enabled': True,
                 'sufficient_energy': True
             },
             'solarSatellite': {
                 'level': 0,
                 'buildUrl':'',
                 'can_build': False,
+		'enabled': True,
                 'sufficient_energy': True
-            },
+            }
+	}
+	self.deposits = {
 	    'metalDeposit': {
                 'level': 0,
                 'buildUrl':'',
                 'can_build': False,
+		'enabled': True,
                 'sufficient_energy': True
             },
             'crystalDeposit': {
                 'level': 0,
                 'buildUrl':'',
                 'can_build': False,
+		'enabled': True,
                 'sufficient_energy': True
             },
             'deuteriumDeposit': {
                 'level': 0,
                 'buildUrl':'',
                 'can_build': False,
+		'enabled': True,
+                'sufficient_energy': True
+            }
+	}
+	self.stations = {
+	    'roboticsFactory': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+		'enabled': True,
                 'sufficient_energy': True
             },
+
+	    'shipyard': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+		'enabled': True,
+                'sufficient_energy': True
+            },
+
+            'researchLab': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+		'enabled': True,
+                'sufficient_energy': True
+            },
+		
+            'naniteFactory': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+		'enabled': True,
+                'sufficient_energy': True
+            },
+
+            'allianceDepot': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+                'enabled': False,
+                'sufficient_energy': True
+            },
+
+            'missileSilo': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+                'enabled': False,
+                'sufficient_energy': True
+            },
+
+            'terraformer': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+                'enabled': False,
+                'sufficient_energy': True
+            },
+
+            'spaceDock': {
+                'level': 0,
+                'buildUrl':'',
+                'can_build': False,
+                'enabled': False,
+                'sufficient_energy': True
+            }
         }
+	self.researches = {
+		'energyTech': {
+                	'level': 0,
+                	'buildUrl':'',
+                	'can_build': False,
+                	'enabled': True,
+                	'sufficient_energy': True
+            	},
+                'laserTech': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'ionTech': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'hyperspaceTech': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'plasmaTech': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'combustionDrive': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'impulseDrive': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'hyperspaceDrive': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'espionageTech': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'computerTech': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'astrophysics': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'intergalacticRes': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'gravitonTech': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'weaponTech': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'shieldingTech': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+                'armourTech': {
+                        'level': 0,
+                        'buildUrl':'',
+                        'can_build': False,
+                        'enabled': True,
+                        'sufficient_energy': True
+                },
+	}
 
         self.ships = {
             'lm': 0,
@@ -112,12 +303,49 @@ class Planet(object):
 	build_options = options['building']
         levels_diff = map(int, build_options['levels_diff'].split(','))
 
-        b = self.buildings
+        b = self.deposits
 	
         if b[deposit]['can_build']:
-                return u'Deposit', b[deposit]['build_url']
+                return deposit, b[deposit]['build_url']
         else:
             return None, None
+
+    def get_station_url(self):
+	station_options = options['station']
+        levels_diff = int(station_options['levels_diff'])
+	priority = station_options['priority']
+	b = self.stations
+	maxlv = max(b, key=lambda k:b[k]['level'] if b[k]['enabled'] else None)
+	minlv = min(b, key=lambda k:b[k]['level'] if b[k]['enabled'] and b[k]['can_build'] else None)
+	
+	if(b[priority]['level'] == b[maxlv]['level'] and b[priority]['level'] == b[minlv]['level'] and b[priority]['can_build']):
+		#print "1"
+		return priority, b[priority]['build_url']
+	elif(b[priority]['level'] == b[minlv]['level'] and b[priority]['can_build']):
+		#print "2"
+		return priority, b[priority]['build_url']
+	elif(b[priority]['level'] == b[maxlv]['level']):
+		if(b[priority]['level']-b[minlv]['level'] >= levels_diff and b[minlv]['enabled'] and b[minlv]['can_build']):
+			#print "3"
+			return minlv, b[minlv]['build_url']
+	elif(b[priority]['can_build']):
+			#print "4"
+			return priority, b[priority]['build_url']
+	return None,None
+    
+    def get_research_url(self):
+        b = self.researches
+        #minlv = min(b, key=lambda k:b[k]['level'] if b[k]['enabled'] and b[k]['can_build'] else None)
+	minlv = float('inf')
+	min = ''
+	for elem, details in b.iteritems():
+		if(details['can_build'] and details['enabled'] and details['level']<minlv):
+			minlv = details['level']
+			min = elem
+	
+	if(min):
+		return min, b[min]['build_url']
+        return None,None	
 
     def get_mine_to_upgrade(self):
         build_options = options['building']
