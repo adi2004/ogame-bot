@@ -22,5 +22,10 @@ Adjust your credentials and other settings in `config.ini` file.
 
     pip install -r requirements.txt
     python bot.py
+    
+If there are still some dependencies problems, these commands might help:
+
+    pip install --upgrade beautifulsoup4
+    pip install --upgrade html5lib
 
 Thanks to r4fek whom i started editing the code from
