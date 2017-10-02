@@ -333,7 +333,7 @@ class Bot(object):
             self.logger.info(s % planet.resources)
         if planet.is_moon():
             return
-	maxReached = [int(planet.resources['metal'])>=int(planet.resources['maxMetal']), int(planet.resources['crystal'])>=int(planet.resources['maxCrystal']), int(planet.resources['deuterium'])>=int(planet.resources['maxDeuterium'])]
+	maxReached = [int(planet.resources['metal'])>=int(planet.resources['maxMetal'].replace(',','').replace('M','000000')), int(planet.resources['crystal'])>=int(planet.resources['maxCrystal'].replace(',','').replace('M','000000')), int(planet.resources['deuterium'])>=int(planet.resources['maxDeuterium'].replace(',','').replace('M','000000'))]
 	next = ''
         if(maxReached[0]): next = 'metalDeposit'
 	elif(maxReached[1]): next = 'crystalDeposit'
