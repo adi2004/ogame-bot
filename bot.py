@@ -422,6 +422,8 @@ class Bot(object):
         return True
     
     def update_planet_struct(self,planet):
+	if(int(options['station']['enabled']) != 1):
+		return True
 	self.logger.info('Checking structures update')
 	in_construction_mode = False
 	resp = self.br.open(self._get_url('station', planet))
@@ -473,7 +475,9 @@ class Bot(object):
         return True
 
     def update_planet_researches(self,planet):
-        self.logger.info('Checking researches update')
+        if(int(options['research']['enabled']) != 1):
+		return True
+	self.logger.info('Checking researches update')
         in_research_mode = False
         resp = self.br.open(self._get_url('research', planet))
         soup = BeautifulSoup(resp,"html5lib")
