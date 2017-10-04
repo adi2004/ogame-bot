@@ -342,7 +342,7 @@ class Planet(object):
 	min = ''
 	for elem in high_prior:
 		if(b[elem]['can_build'] and b[elem]['enabled'] and b[elem]['level']<minlv):
-			minlv = details['level']
+			minlv = b[elem]['level']
 			min = elem
 	
 	if(min):
@@ -352,7 +352,7 @@ class Planet(object):
         min = ''
 	for elem in medium_prior:
                 if(b[elem]['can_build'] and b[elem]['enabled'] and b[elem]['level']<minlv):
-                        minlv = details['level']
+                        minlv = b[elem]['level']
                         min = elem
 
         if(min):
@@ -362,7 +362,7 @@ class Planet(object):
         min = ''
         for elem in low_prior:
                 if(b[elem]['can_build'] and b[elem]['enabled'] and b[elem]['level']<minlv):
-                        minlv = details['level']
+                        minlv = b[elem]['level']
                         min = elem
 
         if(min):
