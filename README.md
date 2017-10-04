@@ -31,6 +31,7 @@ Inside the `config.ini` file, multiple settings can be tweaked:
 
 ###### Credentials
  - uni: The universe in which you're playing (eg. https://s128-it.ogame.gameforge.com is universe 128)
+ - server : The server you're currently playing in (eg. https://s128-it.ogame.gameforge.com is 'it' without commas)
  - username : Your account email
  - password : Your account password
 
@@ -58,7 +59,26 @@ Inside the `config.ini` file, multiple settings can be tweaked:
  - levels_diff : Maximum level difference between the `priority` station and the others
 
 ###### Research
- - enabled Enables automatic research upgrade, at this moment, all researches will all be upgraded to the closest possible level from each other (kinda)
+ - enabled : Enables automatic research upgrade
+ - high_prior : Researches to prioritize the most, possible researches are:    
+   - EnergyTech
+   - laserTech 
+   - ionTech
+   - hyperspaceTech
+   - plasmaTech
+   - combustionDrive
+   - impulseDrive
+   - hyperspaceDrive
+   - espionageTech
+   - computerTech
+   - astrophysics
+   - intergalacticRes
+   - gravitonTech
+   - weaponTech
+   - shieldingTech
+   - armourTech
+ - medium_prior : Researches to prioritize less
+ - low_prior : 'meh' researches
 
 ###### Attack
  - max_ships : Max ships to keep in the attacked planet
