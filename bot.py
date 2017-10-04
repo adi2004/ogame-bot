@@ -24,8 +24,8 @@ socket.setdefaulttimeout(float(options['general']['timeout']))
 
 class Bot(object):
 
-    BASE_URL = 'https://it.ogame.gameforge.com/'
-    LOGIN_URL = 'https://it.ogame.gameforge.com/main/login'
+    BASE_URL = 'https://',options['credentials']['server'],'.ogame.gameforge.com/'
+    LOGIN_URL = 'https://',options['credentials']['server'],'.ogame.gameforge.com/main/login'
     HEADERS = [('User-agent', 'Mozilla/5.0 (Windows NT 6.2; WOW64)\
      AppleWebKit/537.15 (KHTML, like Gecko) Chrome/24.0.1295.0 Safari/537.15')]
     RE_BUILD_REQUEST = re.compile(r"sendBuildRequest\(\'(.*)\',null,(1|0|false|true)\)")
@@ -87,7 +87,7 @@ class Bot(object):
         farms = options['farming']['farms']
         self.farm_no = randint(0, len(farms)-1) if farms else 0
         
-        self.MAIN_URL = 'https://s%s-it.ogame.gameforge.com/game/index.php' % self.uni
+        self.MAIN_URL = 'https://s%s-%s.ogame.gameforge.com/game/index.php' % (self.uni, options['credentials']['server'])
         self.PAGES = {
             'main':        self.MAIN_URL + '?page=overview',
             'resources':   self.MAIN_URL + '?page=resources',
@@ -204,7 +204,7 @@ class Bot(object):
         
         self.logger.info('Logging in..')
         self.br.select_form(name='loginForm')
-        self.br.form['uni'] = ['s%s-it.ogame.gameforge.com' % self.uni]
+        self.br.form['uni'] = ['s%s-%s.ogame.gameforge.com' % (self.uni,options['credentials']['server'])]
         self.br.form['login'] = username
         self.br.form['pass'] = password
         self.br.submit()
@@ -485,7 +485,8 @@ class Bot(object):
                 researchList = soup.find(id='buttonz')
 		resTemp = researchList.findChildren(id='wrapBattle')
                 researches = (('energyTech', 'laserTech', 'ionTech', 'hyperspaceTech','plasmaTech'), ('combustionDrive', 'impulseDrive',
-			      'hyperspaceDrive'), ('espionageTech','computerTech', 'astrophysics', 'intergalacticRes','gravitonTech'),('weaponTech', 'shieldingTech', 'armourTech'))
+			      'hyperspaceDrive'), ('espionageTech','computerTech', 'astrophysics', 'intergalacticRes',
+			      'gravitonTech'),('weaponTech', 'shieldingTech', 'armourTech'))
 		
 		for category,resCategory in zip(researches, resTemp):
                	 	for research, b in zip(category, resCategory.findAll('li')):

@@ -335,17 +335,40 @@ class Planet(object):
     
     def get_research_url(self):
         b = self.researches
-        #minlv = min(b, key=lambda k:b[k]['level'] if b[k]['enabled'] and b[k]['can_build'] else None)
+	high_prior = options['research']['high_prior'].split(' ')
+	medium_prior = options['research']['medium_prior'].split(' ')
+	low_prior = options['research']['low_prior'].split(' ')
 	minlv = float('inf')
 	min = ''
-	for elem, details in b.iteritems():
-		if(details['can_build'] and details['enabled'] and details['level']<minlv):
+	for elem in high_prior:
+		if(b[elem]['can_build'] and b[elem]['enabled'] and b[elem]['level']<minlv):
 			minlv = details['level']
 			min = elem
 	
 	if(min):
 		return min, b[min]['build_url']
-        return None,None	
+	
+	minlv = float('inf')
+        min = ''
+	for elem in medium_prior:
+                if(b[elem]['can_build'] and b[elem]['enabled'] and b[elem]['level']<minlv):
+                        minlv = details['level']
+                        min = elem
+
+        if(min):
+                return min, b[min]['build_url']
+        
+	minlv = float('inf')
+        min = ''
+        for elem in low_prior:
+                if(b[elem]['can_build'] and b[elem]['enabled'] and b[elem]['level']<minlv):
+                        minlv = details['level']
+                        min = elem
+
+        if(min):
+                return min, b[min]['build_url']
+	
+	return None,None	
 
     def get_mine_to_upgrade(self):
         build_options = options['building']
