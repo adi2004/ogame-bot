@@ -315,21 +315,34 @@ class Planet(object):
         levels_diff = int(station_options['levels_diff'])
 	priority = station_options['priority']
 	b = self.stations
-	maxlv = max(b, key=lambda k:b[k]['level'] if b[k]['enabled'] else None)
-	minlv = min(b, key=lambda k:b[k]['level'] if b[k]['enabled'] and b[k]['can_build'] else None)
+	#maxlv = max(b, key=lambda k:b[k]['level'] if b[k]['enabled'] else None)
+	#minlv = min(b, key=lambda k:b[k]['level'] if b[k]['enabled'] and b[k]['can_build'] else None)
 	
+	minlv = float('inf')
+        min = ''
+        for elem, value in b.iteritems():
+                if(value['can_build'] and value['enabled'] and value['level']<minlv):
+                        minlv = elem
+                        min = value['level']
+	
+
+	maxlv = float('-inf')
+        max = ''
+        for elem, value in b.iteritems():
+                if(value['can_build'] and value['enabled'] and value['level']>maxlv):
+                        maxlv = elem
+                        max = value['level']
+
+	print maxlv, minlv
+
 	if(b[priority]['level'] == b[maxlv]['level'] and b[priority]['level'] == b[minlv]['level'] and b[priority]['can_build']):
-		#print "1"
 		return priority, b[priority]['build_url']
 	elif(b[priority]['level'] == b[minlv]['level'] and b[priority]['can_build']):
-		#print "2"
 		return priority, b[priority]['build_url']
 	elif(b[priority]['level'] == b[maxlv]['level']):
 		if(b[priority]['level']-b[minlv]['level'] >= levels_diff and b[minlv]['enabled'] and b[minlv]['can_build']):
-			#print "3"
 			return minlv, b[minlv]['build_url']
 	elif(b[priority]['can_build']):
-			#print "4"
 			return priority, b[priority]['build_url']
 	return None,None
     
