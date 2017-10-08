@@ -329,11 +329,12 @@ class Planet(object):
 	maxlv = float('-inf')
         max = ''
         for elem, value in b.iteritems():
-                if(value['can_build'] and value['enabled'] and value['level']>maxlv):
+		if(value['can_build'] and value['enabled'] and value['level']>maxlv):
                         maxlv = elem
                         max = value['level']
 
-	print maxlv, minlv
+	if(maxlv == float('-inf') or minlv == float('inf')):
+		return None, None
 
 	if(b[priority]['level'] == b[maxlv]['level'] and b[priority]['level'] == b[minlv]['level'] and b[priority]['can_build']):
 		return priority, b[priority]['build_url']
