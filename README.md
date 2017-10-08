@@ -61,7 +61,7 @@ Inside the `config.ini` file, multiple settings can be tweaked:
 ###### Research
  - enabled : Enables automatic research upgrade
  - high_prior : Researches to prioritize the most, possible researches are:    
-   - EnergyTech
+   - energyTech
    - laserTech 
    - ionTech
    - hyperspaceTech
