@@ -6,7 +6,7 @@ Intelligent BOT playing in Ogame
 
 * building buildings
 * transporting resources
-* SMS notifications about incoming attack(s) (NOT TESTED)
+* SMS notifications about incoming attack(s) (relies on a Polish SMS API, so that's not really working right now)
 * sending messages to attacker
 * fleet save
 * farming (hell yeah!)
