@@ -10,6 +10,8 @@ import os
 import re
 import sys
 import json
+import unicodedata
+from decimal import Decimal
 from random import randint
 from datetime import datetime, timedelta
 from utils import *
@@ -75,6 +77,11 @@ class Bot(object):
         20: '2',
         10: '1'
     }
+
+    d = {
+        'M': 6,
+        'B': 9
+    }
     
     def __init__(self, username=None, password=None, uni='69'):
         self.uni = uni
@@ -119,6 +126,15 @@ class Bot(object):
         if planet is not None:
             url += '&cp=%s' % planet.id
         return url
+
+    def text_to_num(self,text):
+	d = self.d
+        if text[-1] in d:
+            num, magnitude = text[:-1], text[-1]
+            return Decimal(unicodedata.normalize('NFKD', num).encode('ascii','ignore').replace(',','.')) * 10 ** d[magnitude]
+        else:
+            return Decimal(text.replace(',','.'))
+
         
     def _prepare_logger(self):
         self.logger = logging.getLogger("mechanize")
@@ -295,6 +311,8 @@ class Bot(object):
         planet.ships = ships
 
     def update_planet_info(self, planet):
+	if(int(options['building']['enabled']) != 1):
+                return True
         in_construction_mode = False
 	resp = self.br.open(self._get_url('resSettings', planet))
         soup = BeautifulSoup(resp,"html5lib")
@@ -333,7 +351,7 @@ class Bot(object):
             self.logger.info(s % planet.resources)
         if planet.is_moon():
             return
-	maxReached = [int(planet.resources['metal'])>=int(planet.resources['maxMetal'].replace(',','').replace('M','000000')), int(planet.resources['crystal'])>=int(planet.resources['maxCrystal'].replace(',','').replace('M','000000')), int(planet.resources['deuterium'])>=int(planet.resources['maxDeuterium'].replace(',','').replace('M','000000'))]
+	maxReached = [int(planet.resources['metal'])>=self.text_to_num(planet.resources['maxMetal']), int(planet.resources['crystal'])>=self.text_to_num(planet.resources['maxCrystal']), int(planet.resources['deuterium'])>=self.text_to_num(planet.resources['maxDeuterium'])]
 	next = ''
         if(maxReached[0]): next = 'metalDeposit'
 	elif(maxReached[1]): next = 'crystalDeposit'
@@ -351,7 +369,8 @@ class Bot(object):
              	  	if build_url:
                		    build_url = self._parse_build_url(build_url.replace(' ', ''))
                		try:
-               		    level = int(b.find('span', 'textlabel').nextSibling)
+			    t = b.find('span', 'textlabel').nextSibling.replace('.','')
+               		    level = int(t)
                		except AttributeError:
                		    try:
                		        level = int(b.find('span', 'level').text)
@@ -404,7 +423,7 @@ class Bot(object):
 	if not in_construction_mode and next != '':
 	    text, url = planet.get_deposit_url(next)
             if url:
-                self.logger.info('Building upgrade on %s: %s'% (planet, text))
+                self.logger.info('Building upgrade on %s: \033[92m%s\033[0m'% (planet, text))
                 self.br.open(url[0])
                 planet.in_construction_mode = True
                 #let now transport manager to clear building queue
@@ -412,7 +431,7 @@ class Bot(object):
 	elif not in_construction_mode and next=='':
             text, url = planet.get_mine_to_upgrade()
             if url:
-                self.logger.info('Building upgrade on %s: %s'% (planet, text))
+                self.logger.info('Building upgrade on %s: \033[92m%s\033[0m'% (planet, text))
                 self.br.open(url[0])
                 planet.in_construction_mode = True
                 #let now transport manager to clear building queue
@@ -465,7 +484,7 @@ class Bot(object):
 	if not in_construction_mode:
             text, url = planet.get_station_url()
             if url:
-                self.logger.info('Stations upgrade on %s: %s'% (planet, text))
+                self.logger.info('Stations upgrade on %s: \033[94m%s\033[0m'% (planet, text))
                 self.br.open(url[0])
                 planet.in_construction_mode = True
                # let now transport manager to clear building queue
@@ -523,7 +542,7 @@ class Bot(object):
         if not in_research_mode:
             text, url = planet.get_research_url()
             if url:
-                self.logger.info('Research upgrade on %s: %s'% (planet, text))
+                self.logger.info('Research upgrade on %s: \033[95m%s\033[0m'% (planet, text))
                 self.br.open(url[0])
         else:
             self.logger.info('Research queue is not empty')
@@ -668,7 +687,7 @@ class Bot(object):
         if origin_planet.coords == destination:
             self.logger.error('Cannot send fleet to the same planet')
             return False
-        self.logger.info('Sending fleet from %s to %s (%s)' \
+        self.logger.info('Sending fleet from \033[0;36m%s\033[0m to \033[0;36m%s\033[0m (%s)' \
             % (origin_planet, destination, mission))
         resp = self.br.open(self._get_url('fleet', origin_planet))
         try:
@@ -867,10 +886,10 @@ class Bot(object):
 	
         if not self.get_player_status(farm)['inactive']:
             self.farm_no += 1
-            self.logger.error('farm %s seems not to be inactive!', farm)
+            self.logger.error('\033[93mfarm %s seems not to be inactive!\033[0m', farm)
             return
         self.send_fleet(
-            self.get_closest_planet(farm),
+            self.planets[0], #self.get_closest_planet(farm) quick fix
             farm,
             fleet={ships_kind:ships_number}
         )

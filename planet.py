@@ -325,7 +325,6 @@ class Planet(object):
                         minlv = elem
                         min = value['level']
 	
-
 	maxlv = float('-inf')
         max = ''
         for elem, value in b.iteritems():
@@ -335,13 +334,15 @@ class Planet(object):
 
 	if(maxlv == float('-inf') or minlv == float('inf')):
 		return None, None
-
+	#ritorna shipyard, rivedere codice
 	if(b[priority]['level'] == b[maxlv]['level'] and b[priority]['level'] == b[minlv]['level'] and b[priority]['can_build']):
 		return priority, b[priority]['build_url']
 	elif(b[priority]['level'] == b[minlv]['level'] and b[priority]['can_build']):
 		return priority, b[priority]['build_url']
 	elif(b[priority]['level'] == b[maxlv]['level']):
-		if(b[priority]['level']-b[minlv]['level'] >= levels_diff and b[minlv]['enabled'] and b[minlv]['can_build']):
+		if(b[priority]['level']-b[minlv]['level'] >= levels_diff):
+			return minlv, b[minlv]['build_url']
+	elif(not (b[priority]['can_build']) and b[minlv]['level']<b[priority]['level']):
 			return minlv, b[minlv]['build_url']
 	elif(b[priority]['can_build']):
 			return priority, b[priority]['build_url']
