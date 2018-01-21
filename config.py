@@ -18,7 +18,6 @@ class Options(watchdog.events.FileSystemEventHandler):
     )
 
     def __init__(self, *args, **kwargs):
-
         self._config = ConfigParser.RawConfigParser()
         self.reload_config()
         self._config_valid = False
@@ -50,7 +49,6 @@ class Options(watchdog.events.FileSystemEventHandler):
             self._config_valid = False
 
     def __getitem__(self, section):
-
         return dict(self._config.items(section))
 
     @property

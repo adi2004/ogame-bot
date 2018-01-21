@@ -41,7 +41,6 @@ Inside the `config.ini` file, multiple settings can be tweaked:
  - timeout : General socket timeout
 
 ###### Building
- - min_energy_level : Minimum energy desired to have
  - max_fusion_plant_level : Self-explanatory
  - levels_diff : Used to regulate mines level
 

@@ -9,9 +9,8 @@ attack_options = options['attack']
 
 class Attack(object):
 
-    def __init__(self, planet, attack_id, arrivalTime, coordsOrigin, destCoords, 
-        detailsFleet, player, message_url):
-
+    def __init__(self, planet, attack_id, arrivalTime, coordsOrigin, destCoords,
+                 detailsFleet, player, message_url):
         self.planet = planet
         self.id = attack_id
         self.arrivalTime = arrivalTime
@@ -39,10 +38,10 @@ class Attack(object):
         return messages[randint(0, len(messages) - 1)]
 
     def get_sms_text(self):
-        return u'%s %s %s %s' % (self.planet, self.arrivalTime, self.player, 
-            self.detailsFleet)
+        return u'%s %s %s %s' % (self.planet, self.arrivalTime, self.player,
+                                 self.detailsFleet)
 
     def __str__(self):
         return 'Attack id: %s to: %s. Agressor: %s, ships: %s. Time:%s' % \
-            (self.id, self.destCoords, self.player, self.detailsFleet, 
-            self.arrivalTime)
+               (self.id, self.destCoords, self.player, self.detailsFleet,
+                self.arrivalTime)
